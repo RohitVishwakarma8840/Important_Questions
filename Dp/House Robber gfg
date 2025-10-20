@@ -1,7 +1,7 @@
 class Solution {
   public:
   
-  int maxi(int i, vector<int>&arr){
+  int maxi(int i, vector<int>&arr,vector<int>&dp){
       
       int n = arr.size();
       
@@ -9,10 +9,15 @@ class Solution {
            return 0;
        }
        
-     int take = arr[i] + maxi(i+2,arr);
-     int nottake = maxi(i+1,arr);
+        if(dp[i]!=-1)
+        {
+            return dp[i];
+        }
+       
+     int take = arr[i] + maxi(i+2,arr,dp);
+     int nottake = maxi(i+1,arr,dp);
      
-     return max(take,nottake);
+     return dp[i] = max(take,nottake);
      
       
   }
@@ -21,9 +26,9 @@ class Solution {
   
     int findMaxSum(vector<int>& arr) {
         
-        // int n = arr.size();
-        
-        return maxi(0,arr); 
+        int n = arr.size();
+        vector<int>dp(n,-1);
+        return maxi(0,arr,dp); 
         
         
     }
