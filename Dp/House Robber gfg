@@ -1,0 +1,30 @@
+class Solution {
+  public:
+  
+  int maxi(int i, vector<int>&arr){
+      
+      int n = arr.size();
+      
+       if(i>=n){
+           return 0;
+       }
+       
+     int take = arr[i] + maxi(i+2,arr);
+     int nottake = maxi(i+1,arr);
+     
+     return max(take,nottake);
+     
+      
+  }
+  
+  
+  
+    int findMaxSum(vector<int>& arr) {
+        
+        // int n = arr.size();
+        
+        return maxi(0,arr); 
+        
+        
+    }
+};
