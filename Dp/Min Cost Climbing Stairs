@@ -1,0 +1,30 @@
+class Solution {
+public:
+
+  int Calc(vector<int>&cost, int index , int n,vector<int>&dp){
+     
+     if(index>=n){
+        return 0;
+     }
+
+     if(dp[index]!=-1){
+        return dp[index];
+     }
+
+    int oneStep = cost[index] + Calc(cost,index+1, n , dp);
+    int twoStep = cost[index] + Calc(cost , index+2 , n , dp);
+
+    return dp[index] = min(oneStep,twoStep);
+  
+
+  }
+
+    int minCostClimbingStairs(vector<int>& cost) {
+        
+        int n = cost.size();
+        vector<int>dp(n,-1);
+      
+      return min(Calc(cost,0,n,dp),Calc(cost,1,n,dp));
+
+    }
+};
