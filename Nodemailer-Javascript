@@ -1,0 +1,126 @@
+/**
+ * Register Service
+ * Handles user registration logic
+ */
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const moduleConstants = require('../constants');
+const sharedConstants = require('../../../shared/constants');
+const { User } = require('../../../shared/models');
+
+const nodemailer = require('nodemailer');
+
+require('dotenv').config();
+
+/**
+ * Register a new user
+ * @param {Object} data - Registration data
+ * @param {string} data.email - User email
+ * @param {string} data.password - User password
+ * @param {string} data.name - User name
+ * @param {string} data.requestId - Request ID for tracking
+ * @returns {Promise<Object>} - Created user and confirmation message
+ * @throws {Error} - If email already exists
+ * * @param {string} email - Recipient's email
+ * @param {string} token - Confirmation token
+ */
+const register = async ({ email, password, name, requestId }) => {
+  console.log(`[${requestId}] Registration attempt for email: ${email}`);
+
+  // Check if user already exists
+  const existingUser = await User.findOne({
+    where: { email: email.toLowerCase() }
+  });
+
+  if (existingUser) {
+    console.log(`[${requestId}] Email already exists: ${email}`);
+    throw new Error(JSON.stringify(moduleConstants.register.errorMessages.USRE0007));
+  }
+
+  // Generate confirmation token
+  const confirmationToken = crypto.randomBytes(32).toString('hex');
+  // console.log(confirmationToken);
+
+// Step 2: Generate alphanumeric OTP (6 characters)
+const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+let otp = '';
+for (let i = 0; i < 6; i++) {
+  otp += characters.charAt(Math.floor(Math.random() * characters.length));
+}
+
+
+
+  // Create new user (password will be automatically hashed by the model hook)
+  const user = await User.create({
+    email: email.toLowerCase(),
+    encrypted_password: password,
+    name: name,
+    confirmation_token: otp,
+    confirmation_sent_at: new Date()
+  });
+
+  console.log(`[${requestId}] Registration successful for user: ${email}`);
+
+ 
+
+
+
+  // TODO: Send confirmation email
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      }
+    });
+
+    // Verify SMTP connection
+    await transporter.verify();
+    console.log(`[${requestId}] SMTP verified — ready to send mail.`);
+
+    // Step 5: Email content (OTP)
+    const mailOptions = {
+      from: `"Null Community " <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Your Email Verification Code',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+          <h2>Welcome, ${name}!</h2>
+          <p>Thank you for registering.</p>
+          <p>Your one-time verification code is:</p>
+           <h1 style="color:#007bff;">${otp}</h1>
+          <p>This code will expire in <strong>10 minutes</strong>.</p>
+          <p>If you didn’t request this, please ignore this email.</p>
+          <br>
+          <p>Best regards,<br>The Team</p>
+        </div>
+      `
+    };
+
+    console.log(`[${requestId}] Preparing to send email to ${email}...`);
+    await transporter.sendMail(mailOptions);
+    console.log(`[${requestId}] Email successfully sent to ${email}`);
+  } catch (err) {
+    console.error(`[${requestId}] Failed to send email:`, err.message);
+  }
+ 
+
+
+  // await sendConfirmationEmail(user.email, confirmationToken);
+
+  // Create a user object without sensitive data
+  const userWithoutPassword = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    handle: user.handle
+  };
+
+  return {
+    user: userWithoutPassword,
+    message: 'Registration successful! Please check your email to confirm your account.'
+  };
+}
+
+module.exports = register;
