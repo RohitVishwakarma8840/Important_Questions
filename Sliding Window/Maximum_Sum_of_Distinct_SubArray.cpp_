@@ -1,0 +1,40 @@
+class Solution {
+public:
+    long long maximumSubarraySum(vector<int>& nums, int k) {
+
+      long long result=0;
+      long long currSum=0;
+
+      int i=0;
+      int j=0;
+
+      unordered_set<int>st;
+      int n = nums.size();
+
+    while(j<n){
+
+        // Remove the duplicate ELement 
+        while(st.count(nums[j])){
+            currSum -= nums[i];
+            st.erase(nums[i]);
+            i++;
+        }
+
+        currSum += nums[j];
+        st.insert(nums[j]);
+
+        if(j-i+1==k){
+            result = max(currSum,result);
+            currSum -= nums[i];
+            st.erase(nums[i]);
+            i++;
+        }
+
+      j++;
+
+    }
+
+     return result;
+
+    }
+};
